@@ -35,7 +35,7 @@
 
 
 import datetime
-
+import hashlib
 from flask import Flask, render_template
 from google.cloud import datastore
 import os
@@ -60,7 +60,7 @@ def save_question(question):
 
 # TODO: Create a Datastore entity object using the key
     q_entity = datastore.Entity(key=key)
-    print(q_entity)
+    
 
 # END TODO
 
@@ -106,8 +106,16 @@ def add():
     if request.method == 'GET':
         return render_template('add.html')
     elif request.method == 'POST':
-        data = request.form.to_dict(flat=True)
-        print(data)
+        
+        data = request.form.to_dict(flat=True)  
+        #print(data['password'])
+        password_salt = os.urandom(32).hex() 
+        data['salt'] = password_salt
+        password = data['password']  
+        hash = hashlib.sha512()
+        hash.update(('%s%s' % (password_salt, password)).encode('utf-8'))
+        password_hash = hash.hexdigest()
+        data['password'] =password_hash
         save_question(data)
         msg="Record added successfully"
         return render_template('add.html',msg=msg)
